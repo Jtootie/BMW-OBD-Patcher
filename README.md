@@ -6,7 +6,7 @@ To use, download the python script and run from your desktop, once the program o
 
 **-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------**
 
-                                              **Use the information below to prepare the ORI/iROM to be used with TunerPro:**
+                                           ** Use the information below to prepare the ORI/iROM to be used with TunerPro:**
 
 Use the tool to see your current PRG, go here and download the xdf and stock bin file (generating the stock bin file in MHD is fine as well) https://github.com/dmacpro91/BMW-XDFs/tree/master/B58gen1
 

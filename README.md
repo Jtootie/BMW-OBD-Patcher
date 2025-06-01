@@ -4,9 +4,9 @@ Started as a DIY to apply the obd unlock to the Gen1 and select Gen2 BMW iRoms i
 
 To use, download the python script and run from your desktop, once the program opens, select "load bin"-->"patch bin"-->"save bin as". write modified bin back to the DME. it si also packeaged into a .exe file so you can run it straight from your desktop without the need to install python.
 
-**-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------**
+**------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------**
 
-                                           ** Use the information below to prepare the ORI/iROM to be used with TunerPro:**
+                   ** Use the information below to prepare the ORI/iROM to be used with TunerPro:**
 
 Use the tool to see your current PRG, go here and download the xdf and stock bin file (generating the stock bin file in MHD is fine as well) https://github.com/dmacpro91/BMW-XDFs/tree/master/B58gen1
 

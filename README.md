@@ -2,7 +2,7 @@ Started as a DIY to apply the obd unlock to the Gen1 and select Gen2 BMW iRoms i
 
 **>>>> THIS WILL NOT READ THE DME, YOU MUST ALREADY HAVE A BENCH READ TOOL THAT CAN READ AND WRITE THE iRom/BIN FILE TO THE DME<<<<**
 
-To use, download the python script and run from your desktop, once the program opens, select "load bin"-->"patch bin"-->"save bin as". write modified bin back to the DME. it si also packeaged into a .exe file so you can run it straight from your desktop without the need to install python.
+To use, download the python script and run from your desktop, once the program opens, select "load bin"-->"patch bin"-->"save bin as". write modified bin back to the DME. it si also packaged into a .exe file so you can run it straight from your desktop without the need to install python.
 
 **------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------**
 

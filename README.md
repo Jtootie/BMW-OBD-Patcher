@@ -1,4 +1,4 @@
-                                                **>>>>PYTHON SCRIPT NO LONGER BEING MAINTAINED, USE VISUAL STUDIO<<<<**
+                          **>>>>PYTHON SCRIPT NO LONGER BEING MAINTAINED, USE THE VISUAL STUDIO FILES<<<<**
 
 Started as a DIY to apply the obd unlock to the Gen1 and select Gen2 BMW iRoms instead of paying another company between 2-300.00 for something that takes less than 30 minutes. Initially created by O.S. Automotives, I have added the ability to read and display the current PRG (for using tunerpro), Identifies the engine code, Chassis, and displays the generation. it works for all Gen1/2 F&G series, even the post June 2020 DMEs once they are decrypted with the new protocol that's been released.
 

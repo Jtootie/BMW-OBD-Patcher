@@ -121,9 +121,9 @@ namespace BMWIRomPatcher
                 {
                     // Preserve the Visual Studio program's existing Gen2 unlock value.
                     UnlockOffset = 0x5F7DC,
-                    UnlockPatch = new byte[] { 0xA8, 0xCD, 0xBE, 0xAC },
+                    UnlockPatch = new byte[] { 0x38, 0xD1, 0xBF, 0xDC },
                     UnlockCheck = new byte[] { 0x00, 0x00, 0x00, 0x00 },
-                    UnlockApplied = new byte[] { 0xA8, 0xCD, 0xBE, 0xAC },
+                    UnlockApplied = new byte[] { 0x38, 0xD1, 0xBF, 0xDC },
                     ObdFind = gen2Pattern1,
                     ObdPatch = gen2Pattern2,
 

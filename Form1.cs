@@ -44,7 +44,7 @@ namespace BMWIRomPatcher
 
         private void BtnAbout_Click(object sender, EventArgs e)
         {
-            MessageBox.Show("v2.4, Created by O.S. Automotives and Jtooties Garage.       Added Software signature patch for 2020+ DMEs. new unlock bytes and watermark based on AutoTuner's post June 2020 DME unlock. AT bytes and checksum provided by tlovenspclsauce", "About",
+            MessageBox.Show("v2.5, Created by O.S. Automotives and Jtooties Garage.       Added checksum correction for Gen1, and software signature patch for 2020+ DMEs. new unlock bytes and watermark based on AutoTuner's post June 2020 DME unlock. AT bytes and checksum provided by tlovenspclsauce", "About",
                 MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
@@ -82,6 +82,11 @@ namespace BMWIRomPatcher
 
         private void DetectAndSetup()
         {
+            _detection = null;
+            _patchInfo = null;
+            _btldDescriptors.Clear();
+            foreach (var button in new[] { btnPatchBin, btnSaveBin, btnPatchWatermarks,
+                btnSwsigStatusFix, btnOriginal, btnTuned, btnConvert, btnRevert }) button.Enabled = false;
             if (_binData == null)
                 return;
 
@@ -584,8 +589,8 @@ namespace BMWIRomPatcher
 
             if (_btldDescriptors.Count == 0)
             {
-                Log("Checksum parse: NO descriptors verified for this file. Checksum auto-correction is disabled — " +
-                    "any patch inside BTLD will need its checksum fixed manually before flashing.");
+                Log("Checksum parse: NO descriptors verified for this file. Descriptor-based patch-time correction is disabled — " +
+                    "Save BIN As will calculate the configured generation-specific CRC regions.");
             }
         }
 
@@ -717,6 +722,18 @@ namespace BMWIRomPatcher
             return string.Concat(data.Select(b => b.ToString("X2")));
         }
 
+        private void SaveLoadedBin(string path)
+        {
+            var generation = BinChecksums.FromDetection(_detection);
+            var descriptors = _btldDescriptors.Select(d => new BinCrcRegion(
+                checked((int)(d.StoredPointer - IromBase)),
+                checked((int)(d.Start - IromBase)),
+                checked((int)(d.End - IromBase)))).ToArray();
+            var corrected = BinChecksums.Save(path, _binData, generation, descriptors);
+            _binData = corrected.Data;
+            foreach (string message in corrected.Messages) Log(message);
+        }
+
         private void BtnSaveBin_Click(object sender, EventArgs e)
         {
             if (_binData == null)
@@ -731,7 +748,7 @@ namespace BMWIRomPatcher
                 {
                     try
                     {
-                        File.WriteAllBytes(sfd.FileName, _binData);
+                        SaveLoadedBin(sfd.FileName);
                         Log($"Saved patched BIN as: {Path.GetFileName(sfd.FileName)}");
                         MessageBox.Show($"BIN saved as:\n{Path.GetFileName(sfd.FileName)}", "Saved",
                             MessageBoxButtons.OK, MessageBoxIcon.Information);

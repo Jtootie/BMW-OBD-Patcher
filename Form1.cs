@@ -44,8 +44,70 @@ namespace BMWIRomPatcher
 
         private void BtnAbout_Click(object sender, EventArgs e)
         {
-            MessageBox.Show("v2.5, Created by O.S. Automotives and Jtooties Garage.       Added checksum correction for Gen1, and software signature patch for 2020+ DMEs. new unlock bytes and watermark based on AutoTuner's post June 2020 DME unlock. AT bytes and checksum provided by tlovenspclsauce", "About",
-                MessageBoxButtons.OK, MessageBoxIcon.Information);
+            using (var about = new Form())
+            {
+                about.Text = "About BMW F/G Series OBD Unlock";
+                about.StartPosition = FormStartPosition.CenterParent;
+                about.ClientSize = new Size(720, 560);
+                about.MinimumSize = new Size(560, 420);
+                about.MinimizeBox = false;
+                about.MaximizeBox = false;
+                about.ShowInTaskbar = false;
+                about.Font = new Font("Segoe UI", 10F);
+
+                var layout = new TableLayoutPanel
+                {
+                    Dock = DockStyle.Fill,
+                    Padding = new Padding(18),
+                    ColumnCount = 1,
+                    RowCount = 3
+                };
+                layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 32));
+                layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 34));
+                layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+
+                layout.Controls.Add(new Label
+                {
+                    Text = "BMW F/G Series OBD Unlock",
+                    Dock = DockStyle.Fill,
+                    Font = new Font(about.Font, FontStyle.Bold),
+                    TextAlign = ContentAlignment.MiddleLeft
+                }, 0, 0);
+                layout.Controls.Add(new Label
+                {
+                    Text = "Created by Jtooties Garage, O.S. Automotives, and tlovenspclsauce",
+                    Dock = DockStyle.Fill,
+                    TextAlign = ContentAlignment.MiddleLeft
+                }, 0, 1);
+
+                var changelog = new TextBox
+                {
+                    Dock = DockStyle.Fill,
+                    Multiline = true,
+                    ReadOnly = true,
+                    WordWrap = true,
+                    ScrollBars = ScrollBars.Vertical,
+                    BackColor = SystemColors.Window,
+                    Text =
+                        "Change log:\r\n\r\n" +
+                        "Version 2.6:\r\n" +
+                        "Complete interface change, added the ability to check the CRC regions, \"save bin as\" will correct any CRC mismatches, and saves an output of the log window.\r\n\r\n" +
+                        "Version 2.5:\r\n" +
+                        "Added checksum correction for Gen1 B58 bin files.\r\n\r\n" +
+                        "Version 2.4:\r\n" +
+                        "Added SWSIGSTATUS button. Used for the post June DMEs where unlocking and/or flashing leads to the DME rejecting the FSCs, or the ability to add new ones.\r\n\r\n" +
+                        "Version 2.3:\r\n" +
+                        "Added AT watermark and CRC correction for June 2020+ vehicles.\r\n\r\n" +
+                        "Version 2.2:\r\n" +
+                        "Added the ability to create a BIN file from the bench read that can be properly read by TunerPro for editing (Gen1 only).\r\n\r\n" +
+                        "Version 1.0:\r\n" +
+                        "Initial release of the iRom patcher, patches the bench read file of F and select G series up until DME production date of June 2020."
+                };
+                layout.Controls.Add(changelog, 0, 2);
+                about.Controls.Add(layout);
+                about.AcceptButton = new Button { Text = "OK", DialogResult = DialogResult.OK, Visible = false };
+                about.ShowDialog(this);
+            }
         }
 
         private void Log(string text)
@@ -56,27 +118,43 @@ namespace BMWIRomPatcher
 
         private void BtnLoadBin_Click(object sender, EventArgs e)
         {
+            if (!TryReadBinaryFile("Binary files (*.bin)|*.bin", "Load BIN", out var data, out var path))
+                return;
+
+            txtOutput.Clear();
+            _binData = data;
+            _filePath = path;
+            loadedFile.Text = _filePath;
+            DetectAndSetup();
+        }
+
+        private static bool TryReadBinaryFile(string filter, string title, out byte[] data, out string path)
+        {
             using (var ofd = new OpenFileDialog())
             {
-                ofd.Filter = "Binary files (*.bin)|*.bin";
+                ofd.Filter = filter;
+                ofd.Title = title;
                 if (ofd.ShowDialog() != DialogResult.OK)
-                    return;
-
-                txtOutput.Clear();
+                {
+                    data = null;
+                    path = null;
+                    return false;
+                }
 
                 try
                 {
-                    _binData = File.ReadAllBytes(ofd.FileName);
-                    _filePath = ofd.FileName;
+                    data = File.ReadAllBytes(ofd.FileName);
+                    path = ofd.FileName;
+                    return true;
                 }
                 catch (Exception ex)
                 {
                     MessageBox.Show("Failed to load file: " + ex.Message, "Error",
                         MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    return;
+                    data = null;
+                    path = null;
+                    return false;
                 }
-
-                DetectAndSetup();
             }
         }
 
@@ -85,16 +163,12 @@ namespace BMWIRomPatcher
             _detection = null;
             _patchInfo = null;
             _btldDescriptors.Clear();
-            foreach (var button in new[] { btnPatchBin, btnSaveBin, btnPatchWatermarks,
-                btnSwsigStatusFix, btnOriginal, btnTuned, btnConvert, btnRevert }) button.Enabled = false;
+            DisableActionButtons();
             if (_binData == null)
                 return;
 
-            // Gen1 detection
             byte[] gen1Pattern1 = { 0x80, 0x2A, 0x03, 0xE2, 0x07 };
             byte[] gen1Pattern2 = { 0x80, 0x48, 0x03, 0x44, 0x00 };
-
-            // Gen2 detection
             byte[] gen2Pattern1 = { 0x91, 0x10, 0x00, 0x26, 0xF6, 0x27 };
             byte[] gen2Pattern2 = { 0x91, 0x10, 0x00, 0x26, 0x82, 0x02 };
 
@@ -194,48 +268,45 @@ namespace BMWIRomPatcher
             CheckEngineChassis();
             btnPatchBin.Enabled = true;
             btnSaveBin.Enabled = true;
+            btnCrcCheck.Enabled = true;
+        }
+
+        private void DisableActionButtons()
+        {
+            foreach (var button in new[]
+            {
+                btnPatchBin,
+                btnSaveBin,
+                btnCrcCheck,
+                btnPatchWatermarks,
+                btnSwsigStatusFix,
+                btnOriginal,
+                btnTuned,
+                btnConvert,
+                btnRevert
+            })
+            {
+                if (button != null)
+                    button.Enabled = false;
+            }
         }
 
         private void BtnOriginal_Click(object sender, EventArgs e)
         {
-            using (var ofd = new OpenFileDialog())
-            {
-                ofd.Filter = "Binary files (*.bin)|*.bin";
-                if (ofd.ShowDialog() != DialogResult.OK)
-                    return;
+            if (!TryReadBinaryFile("Binary files (*.bin)|*.bin", "Load Original BIN", out var data, out var path))
+                return;
 
-                try
-                {
-                    _originalBinData = File.ReadAllBytes(ofd.FileName);
-                    Log($"Original bin loaded: {Path.GetFileName(ofd.FileName)}");
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show("Failed to load original bin: " + ex.Message, "Error",
-                        MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
-            }
+            _originalBinData = data;
+            Log($"Original bin loaded: {Path.GetFileName(path)}");
         }
 
         private void BtnTuned_Click(object sender, EventArgs e)
         {
-            using (var ofd = new OpenFileDialog())
-            {
-                ofd.Filter = "Binary files (*.bin)|*.bin";
-                if (ofd.ShowDialog() != DialogResult.OK)
-                    return;
+            if (!TryReadBinaryFile("Binary files (*.bin)|*.bin", "Load Tuned BIN", out var data, out var path))
+                return;
 
-                try
-                {
-                    _tunedBinData = File.ReadAllBytes(ofd.FileName);
-                    Log($"Tuned bin loaded: {Path.GetFileName(ofd.FileName)}");
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show("Failed to load tuned bin: " + ex.Message, "Error",
-                        MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
-            }
+            _tunedBinData = data;
+            Log($"Tuned bin loaded: {Path.GetFileName(path)}");
         }
 
         private void BtnConvert_Click(object sender, EventArgs e)
@@ -295,20 +366,20 @@ namespace BMWIRomPatcher
                 sfd.DefaultExt = "bin";
                 sfd.Filter = "Binary files (*.bin)|*.bin";
 
-                if (sfd.ShowDialog() == DialogResult.OK)
+                if (sfd.ShowDialog() != DialogResult.OK)
+                    return;
+
+                try
                 {
-                    try
-                    {
-                        File.WriteAllBytes(sfd.FileName, _tunedBinData);
-                        Log($"Saved: {Path.GetFileName(sfd.FileName)}");
-                        MessageBox.Show($"BIN saved as:\n{Path.GetFileName(sfd.FileName)}", "Saved",
-                            MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    }
-                    catch (Exception ex)
-                    {
-                        MessageBox.Show("Failed to save file: " + ex.Message, "Error",
-                            MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    }
+                    File.WriteAllBytes(sfd.FileName, _tunedBinData);
+                    Log($"Saved: {Path.GetFileName(sfd.FileName)}");
+                    MessageBox.Show($"BIN saved as:\n{Path.GetFileName(sfd.FileName)}", "Saved",
+                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Failed to save file: " + ex.Message, "Error",
+                        MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
         }
@@ -318,34 +389,8 @@ namespace BMWIRomPatcher
             if (_binData == null || _patchInfo == null)
                 return;
 
-            int offset = _patchInfo.UnlockOffset;
-            byte[] expected = _patchInfo.UnlockCheck;
-            byte[] patch = _patchInfo.UnlockPatch;
-
-            if (_binData.Length < offset + patch.Length)
-            {
-                Log($"File too short for unlock patch offset 0x{offset:X}");
+            if (!ApplyPatchAtOffset(_patchInfo.UnlockOffset, _patchInfo.UnlockCheck, _patchInfo.UnlockPatch, "Unlock patch"))
                 return;
-            }
-
-            byte[] currentBytes = _binData.Skip(offset).Take(patch.Length).ToArray();
-
-            if (currentBytes.SequenceEqual(patch))
-            {
-                Log($"Unlock patch already applied at 0x{offset:X}");
-            }
-            else if (!currentBytes.SequenceEqual(expected))
-            {
-                Log($"Warning: Unexpected bytes at unlock offset 0x{offset:X}");
-                return;
-            }
-            else
-            {
-                Log($"Unlock patch: before={BytesToHex(currentBytes)} after={BytesToHex(patch)} at 0x{offset:X}");
-                Array.Copy(patch, 0, _binData, offset, patch.Length);
-                Log($"Applied unlock patch at 0x{offset:X}");
-                FixChecksums(offset, patch.Length, "unlock patch");
-            }
 
             int obdOffset = IndexOfSequence(_binData, _patchInfo.ObdFind);
             if (obdOffset == -1)
@@ -361,12 +406,48 @@ namespace BMWIRomPatcher
                 return;
             }
 
-            byte[] obdBefore = _binData.Skip(obdOffset).Take(_patchInfo.ObdPatch.Length).ToArray();
-            Array.Copy(_patchInfo.ObdPatch, 0, _binData, obdOffset, _patchInfo.ObdPatch.Length);
-            Log($"Applied OBD patch at 0x{obdOffset:X}: {BytesToHex(obdBefore)} -> {BytesToHex(_patchInfo.ObdPatch)}");
-            FixChecksums(obdOffset, _patchInfo.ObdPatch.Length, "OBD patch");
-
+            ApplyPatchSequence(obdOffset, _patchInfo.ObdPatch, "OBD patch");
             Log("Patching completed. Use 'Save BIN As...' to save the file.");
+        }
+
+        private bool ApplyPatchAtOffset(int offset, byte[] expected, byte[] patch, string patchName)
+        {
+            if (_binData == null || patch == null)
+                return false;
+
+            if (_binData.Length < offset + patch.Length)
+            {
+                Log($"File too short for {patchName} offset 0x{offset:X}");
+                return false;
+            }
+
+            byte[] currentBytes = _binData.Skip(offset).Take(patch.Length).ToArray();
+
+            if (currentBytes.SequenceEqual(patch))
+            {
+                Log($"{patchName} already applied at 0x{offset:X}");
+                return true;
+            }
+
+            if (!currentBytes.SequenceEqual(expected))
+            {
+                Log($"Warning: Unexpected bytes at {patchName} offset 0x{offset:X}");
+                return false;
+            }
+
+            ApplyPatchSequence(offset, patch, patchName);
+            return true;
+        }
+
+        private void ApplyPatchSequence(int offset, byte[] patch, string patchName)
+        {
+            if (_binData == null || patch == null)
+                return;
+
+            byte[] before = _binData.Skip(offset).Take(patch.Length).ToArray();
+            Array.Copy(patch, 0, _binData, offset, patch.Length);
+            Log($"Applied {patchName} at 0x{offset:X}: {BytesToHex(before)} -> {BytesToHex(patch)}");
+            FixChecksums(offset, patch.Length, patchName);
         }
 
         private void BtnSwsigStatusFix_Click(object sender, EventArgs e)
@@ -384,7 +465,6 @@ namespace BMWIRomPatcher
             if (offset == -1)
             {
                 Log("SWSIGSTATUS Fix: target sequence DF223301 was not found (it may already be patched). No changes made.");
-                SaveOutputLogCopy();
                 return;
             }
 
@@ -398,24 +478,19 @@ namespace BMWIRomPatcher
                 $"{BytesToHex(before)} -> {BytesToHex(patch)}");
             FixChecksums(offset, patch.Length, "SWSIGSTATUS Fix");
             Log("SWSIGSTATUS Fix completed. Use 'Save BIN As...' to save the file.");
-            SaveOutputLogCopy();
         }
 
-        private void SaveOutputLogCopy()
+        private void SaveOutputLogCopy(string binPath)
         {
-            if (string.IsNullOrEmpty(_filePath))
+            if (string.IsNullOrEmpty(binPath))
                 return;
 
-            string binName = Path.GetFileNameWithoutExtension(_filePath);
-            string logPath = Path.Combine(Application.StartupPath, binName + ".txt");
+            string logPath = Path.ChangeExtension(binPath, ".txt");
 
             try
             {
-                // Write once, log the destination, then write again so the TXT is an exact
-                // copy of what is currently visible in the output window.
                 File.WriteAllText(logPath, txtOutput.Text, Encoding.UTF8);
                 Log($"Log saved to: {logPath}");
-                File.WriteAllText(logPath, txtOutput.Text, Encoding.UTF8);
             }
             catch (Exception ex)
             {
@@ -583,7 +658,7 @@ namespace BMWIRomPatcher
                 {
                     Log($"Checksum parse: descriptor {i} 0x{start:X8}-0x{end:X8} MISMATCH — " +
                         $"computed 0x{computed:X8} vs stored 0x{stored:X8}. NOT trusted — " +
-                        "this region will NOT be corrected if patched. Fix this checksum manually before flashing.");
+                        "this region will be corrected once saved");
                 }
             }
 
@@ -611,7 +686,6 @@ namespace BMWIRomPatcher
 
             int patchStart = fileOffset;
             int patchEnd = fileOffset + patchLength - 1;
-            bool touchedAny = false;
 
             foreach (BtldDescriptor descriptor in _btldDescriptors)
             {
@@ -625,8 +699,6 @@ namespace BMWIRomPatcher
 
                 if (patchEnd < regionStartLong || patchStart > regionEndLong)
                     continue;
-
-                touchedAny = true;
 
                 long lengthLong = regionEndLong - regionStartLong + 1;
                 if (lengthLong <= 0 || lengthLong > int.MaxValue ||
@@ -669,12 +741,6 @@ namespace BMWIRomPatcher
                 }
             }
 
-            if (!touchedAny)
-            {
-                uint cpuAddress = IromBase + (uint)patchStart;
-                Log($"CRC fix: 0x{cpuAddress:X8} ({patchLabel}) is outside all verified checksum descriptor ranges — " +
-                    "no correction needed.");
-            }
         }
 
         private static uint ComputeCrc32(byte[] data, int offset, int length)
@@ -734,6 +800,36 @@ namespace BMWIRomPatcher
             foreach (string message in corrected.Messages) Log(message);
         }
 
+        private BinCrcRegion[] GetVerifiedBtldRegions()
+        {
+            return _btldDescriptors
+                .GroupBy(d => new { d.Start, d.End, d.StoredPointer })
+                .Select(group => group.First())
+                .Select(d => new BinCrcRegion(
+                    checked((int)(d.StoredPointer - IromBase)),
+                    checked((int)(d.Start - IromBase)),
+                    checked((int)(d.End - IromBase))))
+                .ToArray();
+        }
+
+        private void BtnCrcCheck_Click(object sender, EventArgs e)
+        {
+            if (_binData == null)
+                return;
+
+            try
+            {
+                var generation = BinChecksums.FromDetection(_detection);
+                var result = BinChecksums.Check(_binData, generation, GetVerifiedBtldRegions());
+                foreach (string message in result.Messages)
+                    Log(message);
+            }
+            catch (Exception ex)
+            {
+                Log("CRC check failed: " + ex.Message);
+            }
+        }
+
         private void BtnSaveBin_Click(object sender, EventArgs e)
         {
             if (_binData == null)
@@ -750,6 +846,7 @@ namespace BMWIRomPatcher
                     {
                         SaveLoadedBin(sfd.FileName);
                         Log($"Saved patched BIN as: {Path.GetFileName(sfd.FileName)}");
+                        SaveOutputLogCopy(sfd.FileName);
                         MessageBox.Show($"BIN saved as:\n{Path.GetFileName(sfd.FileName)}", "Saved",
                             MessageBoxButtons.OK, MessageBoxIcon.Information);
                     }
@@ -865,15 +962,6 @@ namespace BMWIRomPatcher
             return -1;
         }
 
-        private void lblConvertHeader_Click(object sender, EventArgs e)
-        {
-
-        }
-
-        private void BMWPatcherForm_Load(object sender, EventArgs e)
-        {
-
-        }
     }
 
     public class PatchInfo

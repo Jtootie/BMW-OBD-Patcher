@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.ComponentModel;
 using System.Drawing;
 using System.Windows.Forms;
@@ -8,231 +8,165 @@ namespace BMWIRomPatcher
     partial class BMWPatcherForm
     {
         private IContainer components = null;
-
-        private Button btnAbout;
-        private Label lblFooter;
-        private Button btnLoadBin;
+        private Button btnAbout, btnLoadBin, btnPatchBin, btnPatchWatermarks, btnCrcCheck, btnSwsigStatusFix, btnSaveBin;
         private Label lblDetect;
-        private Button btnPatchBin;
-        private Button btnPatchWatermarks;
-        private Button btnSwsigStatusFix;
-        private Button btnSaveBin;
-        private Label lblConvertHeader;
-        private Panel panelGen1;
-        private Button btnOriginal;
-        private Button btnTuned;
-        private Button btnConvert;
-        private Button btnRevert;
+        private TextBox loadedFile;
+        private Button btnOriginal, btnTuned, btnConvert, btnRevert;
         private RichTextBox txtOutput;
 
         protected override void Dispose(bool disposing)
         {
             if (disposing && (components != null))
-            {
                 components.Dispose();
-            }
             base.Dispose(disposing);
         }
 
-        #region Windows Form Designer generated code
+        private Button MakeButton(string text, EventHandler action, bool enabled = false, bool primary = false)
+        {
+            var button = new Button
+            {
+                Text = text,
+                Dock = DockStyle.Fill,
+                Margin = new Padding(4),
+                Enabled = enabled,
+                FlatStyle = FlatStyle.Flat,
+                BackColor = primary ? Color.FromArgb(30, 102, 154) : Color.FromArgb(247, 249, 251),
+                ForeColor = primary ? Color.White : Color.FromArgb(45, 64, 78)
+            };
+            button.FlatAppearance.BorderColor = primary ? button.BackColor : Color.FromArgb(207, 216, 223);
+            button.Click += action;
+            return button;
+        }
+
+        private TableLayoutPanel Card(string heading, string description, int columns)
+        {
+            var card = new TableLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                BackColor = Color.White,
+                Padding = new Padding(14),
+                Margin = new Padding(0, 0, 0, 10),
+                ColumnCount = columns,
+                RowCount = 3
+            };
+            for (int i = 0; i < columns; i++)
+                card.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100f / columns));
+            card.RowStyles.Add(new RowStyle(SizeType.Absolute, 28));
+            card.RowStyles.Add(new RowStyle(SizeType.Absolute, 30));
+            card.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+            var title = new Label { Text = heading, AutoSize = true, Font = new Font(Font, FontStyle.Bold) };
+            var detail = new Label { Text = description, Dock = DockStyle.Fill, AutoEllipsis = true };
+            card.Controls.Add(title, 0, 0);
+            card.SetColumnSpan(title, columns);
+            card.Controls.Add(detail, 0, 1);
+            card.SetColumnSpan(detail, columns);
+            return card;
+        }
 
         private void InitializeComponent()
         {
-            this.btnAbout = new System.Windows.Forms.Button();
-            this.lblFooter = new System.Windows.Forms.Label();
-            this.btnLoadBin = new System.Windows.Forms.Button();
-            this.lblDetect = new System.Windows.Forms.Label();
-            this.btnPatchBin = new System.Windows.Forms.Button();
-            this.btnPatchWatermarks = new System.Windows.Forms.Button();
-            this.btnSwsigStatusFix = new System.Windows.Forms.Button();
-            this.btnSaveBin = new System.Windows.Forms.Button();
-            this.lblConvertHeader = new System.Windows.Forms.Label();
-            this.panelGen1 = new System.Windows.Forms.Panel();
-            this.btnOriginal = new System.Windows.Forms.Button();
-            this.btnTuned = new System.Windows.Forms.Button();
-            this.btnConvert = new System.Windows.Forms.Button();
-            this.btnRevert = new System.Windows.Forms.Button();
-            this.txtOutput = new System.Windows.Forms.RichTextBox();
-            this.panelGen1.SuspendLayout();
-            this.SuspendLayout();
-            // 
-            // btnAbout
-            // 
-            this.btnAbout.Location = new System.Drawing.Point(10, 370);
-            this.btnAbout.Name = "btnAbout";
-            this.btnAbout.Size = new System.Drawing.Size(120, 23);
-            this.btnAbout.TabIndex = 6;
-            this.btnAbout.Text = "About";
-            this.btnAbout.Click += new System.EventHandler(this.BtnAbout_Click);
-            // 
-            // lblFooter
-            // 
-            this.lblFooter.Dock = System.Windows.Forms.DockStyle.Bottom;
-            this.lblFooter.Font = new System.Drawing.Font("Arial", 10F, System.Drawing.FontStyle.Bold);
-            this.lblFooter.ForeColor = System.Drawing.Color.Red;
-            this.lblFooter.Location = new System.Drawing.Point(0, 370);
-            this.lblFooter.Name = "lblFooter";
-            this.lblFooter.Size = new System.Drawing.Size(638, 30);
-            this.lblFooter.TabIndex = 8;
-            this.lblFooter.Text = "THIS PROGRAM IS FREEWARE, DO NOT PAY FOR IT!";
-            this.lblFooter.TextAlign = System.Drawing.ContentAlignment.BottomRight;
-            // 
-            // btnLoadBin
-            // 
-            this.btnLoadBin.Location = new System.Drawing.Point(10, 12);
-            this.btnLoadBin.Name = "btnLoadBin";
-            this.btnLoadBin.Size = new System.Drawing.Size(120, 23);
-            this.btnLoadBin.TabIndex = 0;
-            this.btnLoadBin.Text = "Load BIN";
-            this.btnLoadBin.Click += new System.EventHandler(this.BtnLoadBin_Click);
-            // 
-            // lblDetect
-            // 
-            this.lblDetect.AutoSize = true;
-            this.lblDetect.Location = new System.Drawing.Point(10, 60);
-            this.lblDetect.Name = "lblDetect";
-            this.lblDetect.Size = new System.Drawing.Size(91, 16);
-            this.lblDetect.TabIndex = 1;
-            this.lblDetect.Text = "No file loaded";
-            // 
-            // btnPatchBin
-            // 
-            this.btnPatchBin.Enabled = false;
-            this.btnPatchBin.Location = new System.Drawing.Point(10, 90);
-            this.btnPatchBin.Name = "btnPatchBin";
-            this.btnPatchBin.Size = new System.Drawing.Size(120, 23);
-            this.btnPatchBin.TabIndex = 2;
-            this.btnPatchBin.Text = "Patch BIN";
-            this.btnPatchBin.Click += new System.EventHandler(this.BtnPatchBin_Click);
-            // 
-            // btnPatchWatermarks
-            // 
-            this.btnPatchWatermarks.Enabled = false;
-            this.btnPatchWatermarks.Location = new System.Drawing.Point(142, 12);
-            this.btnPatchWatermarks.Name = "btnPatchWatermarks";
-            this.btnPatchWatermarks.Size = new System.Drawing.Size(125, 42);
-            this.btnPatchWatermarks.TabIndex = 9;
-            this.btnPatchWatermarks.Text = "Patch AT Watermarks";
-            this.btnPatchWatermarks.Click += new System.EventHandler(this.BtnPatchWatermarks_Click);
-            // 
-            // btnSwsigStatusFix
-            // 
-            this.btnSwsigStatusFix.Enabled = false;
-            this.btnSwsigStatusFix.Location = new System.Drawing.Point(142, 90);
-            this.btnSwsigStatusFix.Name = "btnSwsigStatusFix";
-            this.btnSwsigStatusFix.Size = new System.Drawing.Size(125, 42);
-            this.btnSwsigStatusFix.TabIndex = 10;
-            this.btnSwsigStatusFix.Text = "SWSIGSTATUS Fix";
-            this.btnSwsigStatusFix.Click += new System.EventHandler(this.BtnSwsigStatusFix_Click);
-            // 
-            // btnSaveBin
-            // 
-            this.btnSaveBin.Enabled = false;
-            this.btnSaveBin.Location = new System.Drawing.Point(10, 130);
-            this.btnSaveBin.Name = "btnSaveBin";
-            this.btnSaveBin.Size = new System.Drawing.Size(120, 23);
-            this.btnSaveBin.TabIndex = 3;
-            this.btnSaveBin.Text = "Save BIN As...";
-            this.btnSaveBin.Click += new System.EventHandler(this.BtnSaveBin_Click);
-            // 
-            // lblConvertHeader
-            // 
-            this.lblConvertHeader.AutoSize = true;
-            this.lblConvertHeader.Font = new System.Drawing.Font("Arial", 8F, System.Drawing.FontStyle.Italic);
-            this.lblConvertHeader.Location = new System.Drawing.Point(5, 170);
-            this.lblConvertHeader.Name = "lblConvertHeader";
-            this.lblConvertHeader.Size = new System.Drawing.Size(129, 16);
-            this.lblConvertHeader.TabIndex = 4;
-            this.lblConvertHeader.Text = "For Gen 1 use only";
-            this.lblConvertHeader.Click += new System.EventHandler(this.lblConvertHeader_Click);
-            // 
-            // panelGen1
-            // 
-            this.panelGen1.Controls.Add(this.btnOriginal);
-            this.panelGen1.Controls.Add(this.btnTuned);
-            this.panelGen1.Controls.Add(this.btnConvert);
-            this.panelGen1.Controls.Add(this.btnRevert);
-            this.panelGen1.Location = new System.Drawing.Point(10, 200);
-            this.panelGen1.Name = "panelGen1";
-            this.panelGen1.Size = new System.Drawing.Size(120, 160);
-            this.panelGen1.TabIndex = 5;
-            // 
-            // btnOriginal
-            // 
-            this.btnOriginal.Enabled = false;
-            this.btnOriginal.Location = new System.Drawing.Point(0, 0);
-            this.btnOriginal.Name = "btnOriginal";
-            this.btnOriginal.Size = new System.Drawing.Size(120, 23);
-            this.btnOriginal.TabIndex = 0;
-            this.btnOriginal.Text = "Original bin";
-            this.btnOriginal.Click += new System.EventHandler(this.BtnOriginal_Click);
-            // 
-            // btnTuned
-            // 
-            this.btnTuned.Enabled = false;
-            this.btnTuned.Location = new System.Drawing.Point(0, 40);
-            this.btnTuned.Name = "btnTuned";
-            this.btnTuned.Size = new System.Drawing.Size(120, 23);
-            this.btnTuned.TabIndex = 1;
-            this.btnTuned.Text = "Tuned bin";
-            this.btnTuned.Click += new System.EventHandler(this.BtnTuned_Click);
-            // 
-            // btnConvert
-            // 
-            this.btnConvert.Enabled = false;
-            this.btnConvert.Location = new System.Drawing.Point(0, 80);
-            this.btnConvert.Name = "btnConvert";
-            this.btnConvert.Size = new System.Drawing.Size(120, 23);
-            this.btnConvert.TabIndex = 2;
-            this.btnConvert.Text = "Convert";
-            this.btnConvert.Click += new System.EventHandler(this.BtnConvert_Click);
-            // 
-            // btnRevert
-            // 
-            this.btnRevert.Enabled = false;
-            this.btnRevert.Location = new System.Drawing.Point(0, 120);
-            this.btnRevert.Name = "btnRevert";
-            this.btnRevert.Size = new System.Drawing.Size(120, 23);
-            this.btnRevert.TabIndex = 3;
-            this.btnRevert.Text = "Revert";
-            this.btnRevert.Click += new System.EventHandler(this.BtnRevert_Click);
-            // 
-            // txtOutput
-            // 
-            this.txtOutput.Location = new System.Drawing.Point(280, 12);
-            this.txtOutput.Name = "txtOutput";
-            this.txtOutput.ReadOnly = true;
-            this.txtOutput.ScrollBars = System.Windows.Forms.RichTextBoxScrollBars.Vertical;
-            this.txtOutput.Size = new System.Drawing.Size(334, 250);
-            this.txtOutput.TabIndex = 7;
-            this.txtOutput.Text = "";
-            // 
-            // BMWPatcherForm
-            // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(638, 400);
-            this.Controls.Add(this.btnLoadBin);
-            this.Controls.Add(this.lblDetect);
-            this.Controls.Add(this.btnPatchBin);
-            this.Controls.Add(this.btnPatchWatermarks);
-            this.Controls.Add(this.btnSwsigStatusFix);
-            this.Controls.Add(this.btnSaveBin);
-            this.Controls.Add(this.lblConvertHeader);
-            this.Controls.Add(this.panelGen1);
-            this.Controls.Add(this.btnAbout);
-            this.Controls.Add(this.txtOutput);
-            this.Controls.Add(this.lblFooter);
-            this.Name = "BMWPatcherForm";
-            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-            this.Text = "BMW F/G Series OBD Patcher";
-            this.Load += new System.EventHandler(this.BMWPatcherForm_Load);
-            this.panelGen1.ResumeLayout(false);
-            this.ResumeLayout(false);
-            this.PerformLayout();
+            SuspendLayout();
+            Font = new Font("Segoe UI", 10F);
+            BackColor = Color.FromArgb(240, 245, 248);
+            ForeColor = Color.FromArgb(45, 64, 78);
+            AutoScaleDimensions = new SizeF(96F, 96F);
+            AutoScaleMode = AutoScaleMode.Dpi;
+            var scroll = new Panel { Dock = DockStyle.Fill, AutoScroll = true };
+            var layout = new TableLayoutPanel
+            {
+                Dock = DockStyle.Fill, Padding = new Padding(20, 12, 20, 12), ColumnCount = 1,
+                RowCount = 7, MinimumSize = new Size(0, 680)
+            };
+            layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+            foreach (int height in new[] { 55, 130, 138, 138 })
+                layout.RowStyles.Add(new RowStyle(SizeType.Absolute, height));
+            layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+            layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 64));
+            layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 35));
+            layout.Controls.Add(new Label
+            {
+                Text = "BMW F/G Series OBD Unlock", Font = new Font(Font, FontStyle.Bold), BackColor = Color.White,
+                Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleCenter, BorderStyle = BorderStyle.FixedSingle,
+                Margin = new Padding(0, 0, 0, 8)
+            }, 0, 0);
 
+            var load = new TableLayoutPanel
+            {
+                Dock = DockStyle.Fill, BackColor = Color.White, Padding = new Padding(14),
+                Margin = new Padding(0, 0, 0, 10), ColumnCount = 2, RowCount = 3
+            };
+            load.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+            load.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 180));
+            load.RowStyles.Add(new RowStyle(SizeType.Absolute, 25));
+            load.RowStyles.Add(new RowStyle(SizeType.Absolute, 37));
+            load.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+            load.Controls.Add(new Label { Text = "BIN file", AutoSize = true, Font = new Font(Font, FontStyle.Bold) }, 0, 0);
+            loadedFile = new TextBox { ReadOnly = true, Dock = DockStyle.Fill };
+            load.Controls.Add(loadedFile, 0, 1);
+            btnLoadBin = MakeButton("Load BIN...", BtnLoadBin_Click, true);
+            load.Controls.Add(btnLoadBin, 1, 1);
+            lblDetect = new Label { Text = "No file loaded", Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleLeft, BackColor = Color.FromArgb(232, 247, 240) };
+            load.Controls.Add(lblDetect, 0, 2);
+            load.SetColumnSpan(lblDetect, 2);
+            layout.Controls.Add(load, 0, 1);
+
+            var patch = Card("BIN patching", "Load a supported BIN to enable the available patch actions. Save the result when finished.", 4);
+            patch.RowCount = 3;
+            patch.RowStyles.Clear();
+            patch.RowStyles.Add(new RowStyle(SizeType.Absolute, 28));
+            patch.RowStyles.Add(new RowStyle(SizeType.Absolute, 30));
+            patch.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+            patch.ColumnStyles.Clear();
+            for (int i = 0; i < 4; i++)
+                patch.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 25F));
+            btnPatchBin = MakeButton("Patch BIN", BtnPatchBin_Click);
+            btnPatchWatermarks = MakeButton("Patch AT Watermarks", BtnPatchWatermarks_Click);
+            btnCrcCheck = MakeButton("Check CRC", BtnCrcCheck_Click);
+            btnSwsigStatusFix = MakeButton("SWSIGSTATUS Fix", BtnSwsigStatusFix_Click);
+            patch.Controls.Add(btnPatchBin, 0, 2);
+            patch.Controls.Add(btnPatchWatermarks, 1, 2);
+            patch.Controls.Add(btnSwsigStatusFix, 2, 2);
+            patch.Controls.Add(btnCrcCheck, 3, 2);
+            layout.Controls.Add(patch, 0, 2);
+
+            var conversion = Card("Gen1 conversion", "For Gen1 only. Load Original and Tuned BIN files before converting; Revert also uses the main loaded BIN.", 4);
+            btnOriginal = MakeButton("Load Original BIN...", BtnOriginal_Click);
+            btnTuned = MakeButton("Load Tuned BIN...", BtnTuned_Click);
+            btnConvert = MakeButton("Convert...", BtnConvert_Click);
+            btnRevert = MakeButton("Revert...", BtnRevert_Click);
+            conversion.Controls.Add(btnOriginal, 0, 2);
+            conversion.Controls.Add(btnTuned, 1, 2);
+            conversion.Controls.Add(btnConvert, 2, 2);
+            conversion.Controls.Add(btnRevert, 3, 2);
+            layout.Controls.Add(conversion, 0, 3);
+
+            var log = new TableLayoutPanel { Dock = DockStyle.Fill, BackColor = Color.White, Padding = new Padding(14), ColumnCount = 1, RowCount = 2, Margin = new Padding(0, 0, 0, 10) };
+            log.RowStyles.Add(new RowStyle(SizeType.Absolute, 28));
+            log.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+            log.Controls.Add(new Label { Text = "Activity log", AutoSize = true, Font = new Font(Font, FontStyle.Bold) }, 0, 0);
+            txtOutput = new RichTextBox { Dock = DockStyle.Fill, ReadOnly = true, BackColor = Color.White, BorderStyle = BorderStyle.FixedSingle, ScrollBars = RichTextBoxScrollBars.Vertical };
+            log.Controls.Add(txtOutput, 0, 1);
+            layout.Controls.Add(log, 0, 4);
+
+            var actions = new TableLayoutPanel { Dock = DockStyle.Fill, BackColor = Color.White, Padding = new Padding(10), ColumnCount = 3, RowCount = 1, Margin = Padding.Empty };
+            actions.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 160));
+            actions.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+            actions.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 160));
+            btnAbout = MakeButton("About", BtnAbout_Click, true);
+            btnSaveBin = MakeButton("Save BIN As...", BtnSaveBin_Click, false, true);
+            actions.Controls.Add(btnSaveBin, 0, 0);
+            actions.Controls.Add(new Label { Text = "Save BIN As recalculates and verifies the configured CRCs.", Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleLeft, AutoEllipsis = true }, 1, 0);
+            actions.Controls.Add(btnAbout, 2, 0);
+            layout.Controls.Add(actions, 0, 5);
+            layout.Controls.Add(new Label { Text = "V2.6 Freeware - do not pay for it!", Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleRight, Font = new Font("Segoe UI", 9F) }, 0, 6);
+            scroll.Controls.Add(layout);
+            Controls.Add(scroll);
+            Name = "BMWPatcherForm";
+            StartPosition = FormStartPosition.CenterScreen;
+            Text = "BMW F/G Series OBD Unlock";
+            ClientSize = new Size(980, 820);
+            MinimumSize = new Size(860, 780);
+            ResumeLayout(false);
         }
-
-        #endregion
     }
 }

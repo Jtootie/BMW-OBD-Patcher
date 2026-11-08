@@ -9,6 +9,7 @@ namespace BMWIRomPatcher
     {
         private IContainer components = null;
         private Button btnAbout, btnLoadBin, btnPatchBin, btnPatchWatermarks, btnCrcCheck, btnSwsigStatusFix, btnSaveBin;
+        private Button btnBinInfo;
         private Label lblDetect;
         private TextBox loadedFile;
         private Button btnOriginal, btnTuned, btnConvert, btnRevert;
@@ -78,7 +79,7 @@ namespace BMWIRomPatcher
                 RowCount = 7, MinimumSize = new Size(0, 680)
             };
             layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-            foreach (int height in new[] { 55, 130, 138, 138 })
+            foreach (int height in new[] { 55, 144, 138, 138 })
                 layout.RowStyles.Add(new RowStyle(SizeType.Absolute, height));
             layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
             layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 64));
@@ -99,7 +100,7 @@ namespace BMWIRomPatcher
             load.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 180));
             load.RowStyles.Add(new RowStyle(SizeType.Absolute, 25));
             load.RowStyles.Add(new RowStyle(SizeType.Absolute, 37));
-            load.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+            load.RowStyles.Add(new RowStyle(SizeType.Absolute, 44));
             load.Controls.Add(new Label { Text = "BIN file", AutoSize = true, Font = new Font(Font, FontStyle.Bold) }, 0, 0);
             loadedFile = new TextBox { ReadOnly = true, Dock = DockStyle.Fill };
             load.Controls.Add(loadedFile, 0, 1);
@@ -107,7 +108,8 @@ namespace BMWIRomPatcher
             load.Controls.Add(btnLoadBin, 1, 1);
             lblDetect = new Label { Text = "No file loaded", Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleLeft, BackColor = Color.FromArgb(232, 247, 240) };
             load.Controls.Add(lblDetect, 0, 2);
-            load.SetColumnSpan(lblDetect, 2);
+            btnBinInfo = MakeButton("BIN Info…", BtnBinInfo_Click);
+            load.Controls.Add(btnBinInfo, 1, 2);
             layout.Controls.Add(load, 0, 1);
 
             var patch = Card("BIN patching", "Load a supported BIN to enable the available patch actions. Save the result when finished.", 4);
@@ -158,7 +160,7 @@ namespace BMWIRomPatcher
             actions.Controls.Add(new Label { Text = "Save BIN As recalculates and verifies the configured CRCs.", Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleLeft, AutoEllipsis = true }, 1, 0);
             actions.Controls.Add(btnAbout, 2, 0);
             layout.Controls.Add(actions, 0, 5);
-            layout.Controls.Add(new Label { Text = "V2.6 Freeware - do not pay for it!", Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleRight, Font = new Font("Segoe UI", 9F) }, 0, 6);
+            layout.Controls.Add(new Label { Text = "V2.7 Freeware - do not pay for it!", Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleRight, Font = new Font("Segoe UI", 9F) }, 0, 6);
             scroll.Controls.Add(layout);
             Controls.Add(scroll);
             Name = "BMWPatcherForm";

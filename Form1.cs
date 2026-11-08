@@ -14,6 +14,7 @@ namespace BMWIRomPatcher
         private byte[] _binData;
         private string _detection;
         private PatchInfo _patchInfo;
+        private bool _patchBinFailed;
 
         private byte[] _originalBinData;
         private byte[] _tunedBinData;
@@ -90,6 +91,8 @@ namespace BMWIRomPatcher
                     BackColor = SystemColors.Window,
                     Text =
                         "Change log:\r\n\r\n" +
+                        "Version 2.7:\r\n" +
+                        "You can now view additional information embedded in the BIN file, such as hardware/software, engine family, current I-Step, etc..\r\n\r\n" +
                         "Version 2.6:\r\n" +
                         "Complete interface change, added the ability to check the CRC regions, \"save bin as\" will correct any CRC mismatches, and saves an output of the log window.\r\n\r\n" +
                         "Version 2.5:\r\n" +
@@ -112,7 +115,15 @@ namespace BMWIRomPatcher
 
         private void Log(string text)
         {
+            int start = txtOutput.TextLength;
             txtOutput.AppendText(text + Environment.NewLine);
+            if (text.StartsWith("Warning: Unexpected bytes at Unlock patch offset ", StringComparison.Ordinal))
+            {
+                txtOutput.Select(start, text.Length);
+                txtOutput.SelectionColor = Color.Red;
+                txtOutput.Select(txtOutput.TextLength, 0);
+                txtOutput.SelectionColor = txtOutput.ForeColor;
+            }
             txtOutput.ScrollToCaret();
         }
 
@@ -124,8 +135,33 @@ namespace BMWIRomPatcher
             txtOutput.Clear();
             _binData = data;
             _filePath = path;
+            _patchBinFailed = false;
             loadedFile.Text = _filePath;
+            btnBinInfo.Enabled = true;
             DetectAndSetup();
+        }
+
+        private async void BtnBinInfo_Click(object sender, EventArgs e)
+        {
+            if (_binData == null) return;
+            // Snapshot current edits without changing the loaded file or its patch state.
+            byte[] snapshot = (byte[])_binData.Clone();
+            string path = _filePath;
+            btnBinInfo.Enabled = false;
+            try
+            {
+                var report = await System.Threading.Tasks.Task.Run(() => BinMetadata.Read(snapshot, path));
+                if (IsDisposed) return;
+                using (var info = new BinInfoForm(report)) info.ShowDialog(this);
+            }
+            catch (Exception ex)
+            {
+                if (!IsDisposed) MessageBox.Show(this, "Could not read BIN information: " + ex.Message, "BIN Info", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            finally
+            {
+                if (!IsDisposed) btnBinInfo.Enabled = _binData != null;
+            }
         }
 
         private static bool TryReadBinaryFile(string filter, string title, out byte[] data, out string path)
@@ -390,7 +426,10 @@ namespace BMWIRomPatcher
                 return;
 
             if (!ApplyPatchAtOffset(_patchInfo.UnlockOffset, _patchInfo.UnlockCheck, _patchInfo.UnlockPatch, "Unlock patch"))
+            {
+                _patchBinFailed = true;
                 return;
+            }
 
             int obdOffset = IndexOfSequence(_binData, _patchInfo.ObdFind);
             if (obdOffset == -1)
@@ -398,15 +437,18 @@ namespace BMWIRomPatcher
                 if (IndexOfSequence(_binData, _patchInfo.ObdPatch) != -1)
                 {
                     Log("OBD patch already applied.");
+                    _patchBinFailed = false;
                 }
                 else
                 {
                     Log("Error: OBD patch sequence not found.");
+                    _patchBinFailed = true;
                 }
                 return;
             }
 
             ApplyPatchSequence(obdOffset, _patchInfo.ObdPatch, "OBD patch");
+            _patchBinFailed = false;
             Log("Patching completed. Use 'Save BIN As...' to save the file.");
         }
 
@@ -842,6 +884,13 @@ namespace BMWIRomPatcher
 
                 if (sfd.ShowDialog() == DialogResult.OK)
                 {
+                    if (_patchBinFailed)
+                    {
+                        MessageBox.Show(
+                            "The BIN patch did not complete successfully. The saved file may not be usable as an unlocked BIN.",
+                            "Patch Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    }
+
                     try
                     {
                         SaveLoadedBin(sfd.FileName);

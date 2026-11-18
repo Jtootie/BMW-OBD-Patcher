@@ -91,6 +91,8 @@ namespace BMWIRomPatcher
                     BackColor = SystemColors.Window,
                     Text =
                         "Change log:\r\n\r\n" +
+                        "Version 2.8:\r\n" +
+                        "Unexpected bytes at 0x5F7DC just throws a warning instead of failing to patch. it will overwite whatever is there and applies the unlock patch.\r\n\r\n" +
                         "Version 2.7:\r\n" +
                         "You can now view additional information embedded in the BIN file, such as hardware/software, engine family, current I-Step, etc..\r\n\r\n" +
                         "Version 2.6:\r\n" +
@@ -207,10 +209,12 @@ namespace BMWIRomPatcher
             byte[] gen1Pattern2 = { 0x80, 0x48, 0x03, 0x44, 0x00 };
             byte[] gen2Pattern1 = { 0x91, 0x10, 0x00, 0x26, 0xF6, 0x27 };
             byte[] gen2Pattern2 = { 0x91, 0x10, 0x00, 0x26, 0x82, 0x02 };
+            string processorType;
 
             if (ContainsPattern(_binData, gen1Pattern1) || ContainsPattern(_binData, gen1Pattern2))
             {
                 _detection = "Gen1 ORI/IROM";
+                processorType = "SPC5777";
                 _patchInfo = new PatchInfo
                 {
                     UnlockOffset = 0x40260,
@@ -232,17 +236,18 @@ namespace BMWIRomPatcher
             else if (ContainsPattern(_binData, gen2Pattern1) || ContainsPattern(_binData, gen2Pattern2))
             {
                 _detection = "Gen2 ORI/IROM";
+                processorType = "TC298TP";
                 _patchInfo = new PatchInfo
                 {
-                    // Preserve the Visual Studio program's existing Gen2 unlock value.
                     UnlockOffset = 0x5F7DC,
                     UnlockPatch = new byte[] { 0x38, 0xD1, 0xBF, 0xDC },
                     UnlockCheck = new byte[] { 0x00, 0x00, 0x00, 0x00 },
                     UnlockApplied = new byte[] { 0x38, 0xD1, 0xBF, 0xDC },
                     ObdFind = gen2Pattern1,
                     ObdPatch = gen2Pattern2,
+                    Force = true,
 
-                    // AutoTuner-style Gen2 watermarks ported from the Python patcher.
+                    // AutoTuner-style Gen2 watermarks.
                     Watermark1Offset = 0x5FEA9,
                     Watermark1Check = new byte[] { 0x5F, 0x5F, 0x5F, 0x5F },
                     Watermark1Patch = new byte[] { 0x41, 0x54, 0x41, 0x54 },
@@ -274,7 +279,7 @@ namespace BMWIRomPatcher
                 return;
             }
 
-            lblDetect.Text = $"Detected: {_detection}";
+            lblDetect.Text = $"Detected: {_detection} | Processor: {processorType}";
             Log($"Loaded: {Path.GetFileName(_filePath)}");
             Log($"Detected: {_detection}");
 
@@ -425,7 +430,7 @@ namespace BMWIRomPatcher
             if (_binData == null || _patchInfo == null)
                 return;
 
-            if (!ApplyPatchAtOffset(_patchInfo.UnlockOffset, _patchInfo.UnlockCheck, _patchInfo.UnlockPatch, "Unlock patch"))
+            if (!ApplyPatchAtOffset(_patchInfo.UnlockOffset, _patchInfo.UnlockCheck, _patchInfo.UnlockPatch, "Unlock patch", _patchInfo.Force))
             {
                 _patchBinFailed = true;
                 return;
@@ -452,7 +457,7 @@ namespace BMWIRomPatcher
             Log("Patching completed. Use 'Save BIN As...' to save the file.");
         }
 
-        private bool ApplyPatchAtOffset(int offset, byte[] expected, byte[] patch, string patchName)
+        private bool ApplyPatchAtOffset(int offset, byte[] expected, byte[] patch, string patchName, bool force = false)
         {
             if (_binData == null || patch == null)
                 return false;
@@ -473,13 +478,21 @@ namespace BMWIRomPatcher
 
             if (!currentBytes.SequenceEqual(expected))
             {
-                Log($"Warning: Unexpected bytes at {patchName} offset 0x{offset:X}");
-                return false;
+                Log($"Warning: Unexpected bytes at {patchName} offset 0x{offset:X}. " +
+                    $"Found {BitConverter.ToString(currentBytes).Replace('-', ' ')}. " +
+                    $"Expected {BitConverter.ToString(expected).Replace('-', ' ')}.");
+
+                // Only stop here if Force is false
+                if (!force)
+                    return true;
             }
 
+            // Because Force is true for Gen2, execution falls through to here,
+            // writes the new bytes, logs the change, and runs FixChecksums!
             ApplyPatchSequence(offset, patch, patchName);
             return true;
         }
+
 
         private void ApplyPatchSequence(int offset, byte[] patch, string patchName)
         {
@@ -1031,6 +1044,7 @@ namespace BMWIRomPatcher
         public byte[] Watermark2Check { get; set; }
         public byte[] Watermark2CheckAlt { get; set; }
         public byte[] Watermark2Patch { get; set; }
+        public bool Force { get; internal set; }
     }
 
     internal class BtldDescriptor

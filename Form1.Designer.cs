@@ -160,7 +160,7 @@ namespace BMWIRomPatcher
             actions.Controls.Add(new Label { Text = "Save BIN As recalculates and verifies the configured CRCs.", Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleLeft, AutoEllipsis = true }, 1, 0);
             actions.Controls.Add(btnAbout, 2, 0);
             layout.Controls.Add(actions, 0, 5);
-            layout.Controls.Add(new Label { Text = "V2.7 Freeware - do not pay for it!", Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleRight, Font = new Font("Segoe UI", 9F) }, 0, 6);
+            layout.Controls.Add(new Label { Text = "V2.8 Freeware - do not pay for it!", Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleRight, Font = new Font("Segoe UI", 9F) }, 0, 6);
             scroll.Controls.Add(layout);
             Controls.Add(scroll);
             Name = "BMWPatcherForm";
